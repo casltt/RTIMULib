@@ -120,6 +120,14 @@ bool RTIMUBNO055::IMUInit()
 
     m_settings->delayMs(50);
 
+    while (1) {
+        if (!m_settings->HALRead(m_slaveAddr, BNO055_CALIB_STAT, 1, &result, ""))
+            continue;
+        HAL_INFO1("BNO055 calibration status : %d",result);
+        m_settings->delayMs(50);
+    }
+    
+
     HAL_INFO("BNO055 init complete\n");
     return true;
 }
