@@ -27,6 +27,25 @@
 
 #include "RTIMU.h"
 
+/** A structure to represent offsets **/
+typedef struct {
+  int16_t accel_offset_x; /**< x acceleration offset */
+  int16_t accel_offset_y; /**< y acceleration offset */
+  int16_t accel_offset_z; /**< z acceleration offset */
+
+  int16_t mag_offset_x; /**< x magnetometer offset */
+  int16_t mag_offset_y; /**< y magnetometer offset */
+  int16_t mag_offset_z; /**< z magnetometer offset */
+
+  int16_t gyro_offset_x; /**< x gyroscrope offset */
+  int16_t gyro_offset_y; /**< y gyroscrope offset */
+  int16_t gyro_offset_z; /**< z gyroscrope offset */
+
+  int16_t accel_radius; /**< acceleration radius */
+
+  int16_t mag_radius; /**< magnetometer radius */
+} bno055_offsets_t;
+
 class RTIMUBNO055 : public RTIMU
 {
 public:
@@ -38,11 +57,11 @@ public:
     virtual bool IMUInit();
     virtual int IMUGetPollInterval();
     virtual bool IMURead();
+    
 
 private:
     unsigned char m_slaveAddr;                              // I2C address of BNO055
-    bool RTIMUBNO055::getSensorOffsets(bno055_offsets_t &offsets_type,unsigned char status);
-
+    bool getSensorOffsets(bno055_offsets_t &offsets_type,unsigned char status);
     uint64_t m_lastReadTime;
 };
 

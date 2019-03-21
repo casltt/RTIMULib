@@ -1116,6 +1116,7 @@
 
 #define BNO055_OPER_MODE_CONFIG     0x00
 #define BNO055_OPER_MODE_NDOF       0x0c
+#define OPERATION_MODE_NDOF_FMC_OFF 0X0B
 
 //  Power modes
 
