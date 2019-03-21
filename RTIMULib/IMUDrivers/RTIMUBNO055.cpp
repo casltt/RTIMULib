@@ -39,6 +39,78 @@
 #include "RTIMUBNO055.h"
 #include "RTIMUSettings.h"
 
+/** A structure to represent offsets **/
+typedef struct {
+  int16_t accel_offset_x; /**< x acceleration offset */
+  int16_t accel_offset_y; /**< y acceleration offset */
+  int16_t accel_offset_z; /**< z acceleration offset */
+
+  int16_t mag_offset_x; /**< x magnetometer offset */
+  int16_t mag_offset_y; /**< y magnetometer offset */
+  int16_t mag_offset_z; /**< z magnetometer offset */
+
+  int16_t gyro_offset_x; /**< x gyroscrope offset */
+  int16_t gyro_offset_y; /**< y gyroscrope offset */
+  int16_t gyro_offset_z; /**< z gyroscrope offset */
+
+  int16_t accel_radius; /**< acceleration radius */
+
+  int16_t mag_radius; /**< magnetometer radius */
+} bno055_offsets_t;
+
+bool RTIMUBNO055::getSensorOffsets(bno055_offsets_t &offsets_type,unsigned char status) {
+    unsigned char buffer[22];
+    m_slaveAddr = m_settings->m_I2CSlaveAddress;
+    if (status = 0xff) {
+        if (!m_settings->HALWrite(m_slaveAddr, BNO055_OPER_MODE, BNO055_OPER_MODE_CONFIG, "Failed to set BNO055 into config mode"))
+            return false;
+        m_settings->delayMs(50);
+
+        if (!m_settings->HALRead(m_slaveAddr, BNO055_ACCEL_OFFSET_X_LSB_ADDR, NUM_BNO055_OFFSET_REGISTERS, buffer, "Failed to read BNO055 Calib data"))
+            return false;
+        
+        /* Accel offset range depends on the G-range:
+        +/-2g  = +/- 2000 mg
+        +/-4g  = +/- 4000 mg
+        +/-8g  = +/- 8000 mg
+        +/-1§g = +/- 16000 mg */
+        offsets_type.accel_offset_x = (buffer[1] << 8 | buffer[0]);
+        offsets_type.accel_offset_y = (buffer[3] << 8 | buffer[2]);
+        offsets_type.accel_offset_z = (buffer[5] << 8 | buffer[4]);
+
+        /* Magnetometer offset range = +/- 6400 LSB where 1uT = 16 LSB */
+        offsets_type.mag_offset_x = (buffer[7] << 8 | buffer[6]);
+        offsets_type.mag_offset_y = (buffer[9] << 8 | buffer[8]);
+        offsets_type.mag_offset_z = (buffer[11] << 8 | buffer[10]);
+
+        /* Gyro offset range depends on the DPS range:
+        2000 dps = +/- 32000 LSB
+        1000 dps = +/- 16000 LSB
+        500 dps = +/- 8000 LSB
+        250 dps = +/- 4000 LSB
+        125 dps = +/- 2000 LSB
+        ... where 1 DPS = 16 LSB */
+        offsets_type.gyro_offset_x =(buffer[13] << 8 | buffer[12]);
+        offsets_type.gyro_offset_y =(buffer[15] << 8 | buffer[14]);
+        offsets_type.gyro_offset_z =(buffer[17] << 8 | buffer[16]);
+
+        /* Accelerometer radius = +/- 1000 LSB */
+        offsets_type.accel_radius =(buffer[19] << 8 | buffer[18]);
+
+        /* Magnetometer radius = +/- 960 LSB */
+        offsets_type.mag_radius =(buffer[21] << 8 | buffer[20]);
+        
+        m_settings->delayMs(50);
+        if (!m_settings->HALWrite(m_slaveAddr, BNO055_OPER_MODE, BNO055_OPER_MODE_NDOF, "Failed to set BNO055 into 9-dof mode"))
+            return false;
+        
+        m_settings->delayMs(50);
+    return true;
+  }
+  return false;
+}
+
+
 RTIMUBNO055::RTIMUBNO055(RTIMUSettings *settings) : RTIMU(settings)
 {
     m_sampleRate = 100;
@@ -120,14 +192,6 @@ bool RTIMUBNO055::IMUInit()
 
     m_settings->delayMs(50);
 
-    while (1) {
-        if (!m_settings->HALRead(m_slaveAddr, BNO055_CALIB_STAT, 1, &result, ""))
-            continue;
-        HAL_INFO1("BNO055 calibration status : %d",result);
-        m_settings->delayMs(50);
-    }
-    
-
     HAL_INFO("BNO055 init complete\n");
     return true;
 }
@@ -140,6 +204,7 @@ int RTIMUBNO055::IMUGetPollInterval()
 bool RTIMUBNO055::IMURead()
 {
     unsigned char buffer[24];
+    unsigned char result;
 
     if ((RTMath::currentUSecsSinceEpoch() - m_lastReadTime) < m_sampleInterval)
         return false;                                       // too soon
@@ -195,5 +260,8 @@ bool RTIMUBNO055::IMURead()
     m_imuData.fusionQPose.fromEuler(m_imuData.fusionPose);
 
     m_imuData.timestamp = RTMath::currentUSecsSinceEpoch();
+
+    if (m_settings->HALRead(m_slaveAddr, BNO055_CALIB_STAT, 1, &result, "BNO055 calibration status"))
+        HAL_INFO1("BNO055 calibration status : %#02x\n",result);
     return true;
 }

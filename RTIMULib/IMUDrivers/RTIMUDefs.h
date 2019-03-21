@@ -1100,12 +1100,17 @@
 #define BNO055_GYRO_DATA            0x14
 #define BNO055_FUSED_EULER          0x1a
 #define BNO055_FUSED_QUAT           0x20
+#define BNO055_CALIB_STAT           0x35
 #define BNO055_UNIT_SEL             0x3b
 #define BNO055_OPER_MODE            0x3d
 #define BNO055_PWR_MODE             0x3e
 #define BNO055_SYS_TRIGGER          0x3f
 #define BNO055_AXIS_MAP_CONFIG      0x41
 #define BNO055_AXIS_MAP_SIGN        0x42
+#define BNO055_ACCEL_OFFSET_X_LSB_ADDR     0x55
+
+//  BNO055 Offsets registers
+#define NUM_BNO055_OFFSET_REGISTERS (22)
 
 //  Operation modes
 

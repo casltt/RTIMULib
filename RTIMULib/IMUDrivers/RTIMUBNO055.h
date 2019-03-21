@@ -41,6 +41,7 @@ public:
 
 private:
     unsigned char m_slaveAddr;                              // I2C address of BNO055
+    bool RTIMUBNO055::getSensorOffsets(bno055_offsets_t &offsets_type,unsigned char status);
 
     uint64_t m_lastReadTime;
 };
