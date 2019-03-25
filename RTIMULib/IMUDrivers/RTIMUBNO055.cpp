@@ -43,8 +43,17 @@
 
 #ifdef NO_CAIL
 const unsigned char offset[NUM_BNO055_OFFSET_REGISTERS]={ //5 -12 -32 -729 -89 -553 -2 -1 0 1000 796
-
-    5,0,   0xf4,0xff,  0xe0, 0xff, 0x27,0xfd,  0xa7, 0xff, 0xd7,0xfd,  0xfe,0xff,   0xff,0xff, 0x00, 0x00, 0xe8,0x03, 0x1c,0x03};
+    0x08,0x00,
+    0x00,0x16,
+    0xDE,0xFF,
+    0xE4,0x02,
+    0x68,0x00,
+    0xE1,0xFD,
+    0x02,0x00,
+    0x02,0x00,
+    0x00,0x00,
+    0xe8,0x03,
+    0xD3,0x02};
 #endif
 
 #ifdef START_CAIL
@@ -198,10 +207,20 @@ bool RTIMUBNO055::IMUInit()
         return false;
 
     m_settings->delayMs(50);
-    //I²C write access can be used to write a data  byte  in  one sequence
+
+    if (!m_settings->HALWrite(m_slaveAddr, BNO055_AXIS_MAP_CONFIG, 0x24, "Failed to set BNO055 AXIS Remap Config")) //Refer Datasheet
+        return false;
+
+    m_settings->delayMs(50);
+
+    if (!m_settings->HALWrite(m_slaveAddr, BNO055_AXIS_MAP_SIGN, 0x06, "Failed to set BNO055 AXIS Remap sign")) //Refer Datasheet
+        return false;
+
+    m_settings->delayMs(50);
+
 
 #ifdef NO_CAIL
-
+    //I²C write access can be used to write a data  byte  in  one sequence
     uint8_t dummy = 0;
     for (dummy = 0 ; dummy < NUM_BNO055_OFFSET_REGISTERS; dummy++){
         if (!m_settings->HALWrite(m_slaveAddr, BNO055_ACCEL_OFFSET_X_LSB_ADDR+dummy,offset[dummy], "Failed to set BNO055 Calibration Offset"))
