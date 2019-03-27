@@ -258,7 +258,7 @@ int RTIMUBNO055::IMUGetPollInterval()
 
 bool RTIMUBNO055::IMURead()
 {
-    unsigned char buffer[32];
+    unsigned char buffer[44];
 
 #ifdef START_CAIL
     unsigned char result;
@@ -269,13 +269,13 @@ bool RTIMUBNO055::IMURead()
         return false;                                       // too soon
 
     m_lastReadTime = RTMath::currentUSecsSinceEpoch();
-    if (!m_settings->HALRead(m_slaveAddr, BNO055_ACCEL_DATA, 32, buffer, "Failed to read BNO055 data"))
+    if (!m_settings->HALRead(m_slaveAddr, BNO055_ACCEL_DATA, 44, buffer, "Failed to read BNO055 data"))
         return false;
 
     int16_t x, y, z;
 
     // process accel data
-
+    /*
     x = (((uint16_t)buffer[1]) << 8) | ((uint16_t)buffer[0]);
     y = (((uint16_t)buffer[3]) << 8) | ((uint16_t)buffer[2]);
     z = (((uint16_t)buffer[5]) << 8) | ((uint16_t)buffer[4]);
@@ -285,7 +285,8 @@ bool RTIMUBNO055::IMURead()
     m_imuData.accel.setZ((RTFLOAT)z / 1000.0);
 
     // process mag data
-
+    */
+    /*
     x = (((uint16_t)buffer[7]) << 8) | ((uint16_t)buffer[6]);
     y = (((uint16_t)buffer[9]) << 8) | ((uint16_t)buffer[8]);
     z = (((uint16_t)buffer[11]) << 8) | ((uint16_t)buffer[10]);
@@ -293,7 +294,7 @@ bool RTIMUBNO055::IMURead()
     m_imuData.compass.setX(-(RTFLOAT)x / 16.0);
     m_imuData.compass.setY(-(RTFLOAT)y / 16.0);
     m_imuData.compass.setZ(-(RTFLOAT)z / 16.0);
-
+    */
     // process gyro data
 
     x = (((uint16_t)buffer[13]) << 8) | ((uint16_t)buffer[12]);
@@ -327,6 +328,22 @@ bool RTIMUBNO055::IMURead()
     m_imuData.fusionQPose.setX((RTFLOAT)x / 16384.0);
     m_imuData.fusionQPose.setY((RTFLOAT)y / 16384.0);
     m_imuData.fusionQPose.setZ((RTFLOAT)z / 16384.0);
+
+    x = (((uint16_t)buffer[33]) << 8) | ((uint16_t)buffer[32]);
+    y = (((uint16_t)buffer[35]) << 8) | ((uint16_t)buffer[34]);
+    z = (((uint16_t)buffer[37]) << 8) | ((uint16_t)buffer[36]);
+
+    m_imuData.accel.setX((RTFLOAT)x / 100.0);
+    m_imuData.accel.setY((RTFLOAT)y / 100.0);
+    m_imuData.accel.setZ((RTFLOAT)z / 100.0);
+
+    x = (((uint16_t)buffer[39]) << 8) | ((uint16_t)buffer[38]);
+    y = (((uint16_t)buffer[41]) << 8) | ((uint16_t)buffer[40]);
+    z = (((uint16_t)buffer[43]) << 8) | ((uint16_t)buffer[42]);
+
+    m_imuData.compass.setX(-(RTFLOAT)x / 100.0);
+    m_imuData.compass.setY(-(RTFLOAT)y / 100.0);
+    m_imuData.compass.setZ(-(RTFLOAT)z / 100.0);
 
     m_imuData.timestamp = RTMath::currentUSecsSinceEpoch();
 
