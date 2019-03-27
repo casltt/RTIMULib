@@ -43,17 +43,28 @@
 
 #ifdef NO_CAIL
 const unsigned char offset[NUM_BNO055_OFFSET_REGISTERS]={ //5 -12 -32 -729 -89 -553 -2 -1 0 1000 796
-    0x08,0x00,
-    0x00,0x16,
-    0xDE,0xFF,
-    0xE4,0x02,
-    0x68,0x00,
-    0xE1,0xFD,
-    0x02,0x00,
-    0x02,0x00,
-    0x00,0x00,
-    0xe8,0x03,
-    0xD3,0x02};
+0x11,
+0x00,
+0x03,
+0x00,
+0xE1,
+0xFF,
+0x74,
+0x00,
+0xFC,
+0xFC,
+0xE6,
+0xFD,
+0x01,
+0x00,
+0xFE,
+0xFF,
+0x00,
+0x00,
+0xE8,
+0x03,
+0xCE,
+0x02,};
 #endif
 
 #ifdef START_CAIL
@@ -120,7 +131,7 @@ bool RTIMUBNO055::getSensorOffsets(bno055_offsets_t &offsets_type,unsigned char 
 
         uint8_t dummy;
         for(dummy = 0; dummy < NUM_BNO055_OFFSET_REGISTERS;dummy++){
-            HAL_INFO1("%x\n", buffer[dummy]);
+            HAL_INFO1("0x%02X,\n", buffer[dummy]);
         }
         return false;
     return true;
@@ -208,12 +219,12 @@ bool RTIMUBNO055::IMUInit()
 
     m_settings->delayMs(50);
 
-    if (!m_settings->HALWrite(m_slaveAddr, BNO055_AXIS_MAP_CONFIG, 0x24, "Failed to set BNO055 AXIS Remap Config")) //Refer Datasheet
+    if (!m_settings->HALWrite(m_slaveAddr, BNO055_AXIS_MAP_CONFIG, 0x21, "Failed to set BNO055 AXIS Remap Config")) //Refer Datasheet
         return false;
 
     m_settings->delayMs(50);
 
-    if (!m_settings->HALWrite(m_slaveAddr, BNO055_AXIS_MAP_SIGN, 0x06, "Failed to set BNO055 AXIS Remap sign")) //Refer Datasheet
+    if (!m_settings->HALWrite(m_slaveAddr, BNO055_AXIS_MAP_SIGN, 0x04, "Failed to set BNO055 AXIS Remap sign")) //Refer Datasheet
         return false;
 
     m_settings->delayMs(50);
@@ -247,7 +258,7 @@ int RTIMUBNO055::IMUGetPollInterval()
 
 bool RTIMUBNO055::IMURead()
 {
-    unsigned char buffer[24];
+    unsigned char buffer[32];
 
 #ifdef START_CAIL
     unsigned char result;
@@ -258,7 +269,7 @@ bool RTIMUBNO055::IMURead()
         return false;                                       // too soon
 
     m_lastReadTime = RTMath::currentUSecsSinceEpoch();
-    if (!m_settings->HALRead(m_slaveAddr, BNO055_ACCEL_DATA, 24, buffer, "Failed to read BNO055 data"))
+    if (!m_settings->HALRead(m_slaveAddr, BNO055_ACCEL_DATA, 32, buffer, "Failed to read BNO055 data"))
         return false;
 
     int16_t x, y, z;
@@ -269,8 +280,8 @@ bool RTIMUBNO055::IMURead()
     y = (((uint16_t)buffer[3]) << 8) | ((uint16_t)buffer[2]);
     z = (((uint16_t)buffer[5]) << 8) | ((uint16_t)buffer[4]);
 
-    m_imuData.accel.setX((RTFLOAT)y / 1000.0);
-    m_imuData.accel.setY((RTFLOAT)x / 1000.0);
+    m_imuData.accel.setX((RTFLOAT)x / 1000.0);
+    m_imuData.accel.setY((RTFLOAT)y / 1000.0);
     m_imuData.accel.setZ((RTFLOAT)z / 1000.0);
 
     // process mag data
@@ -279,8 +290,8 @@ bool RTIMUBNO055::IMURead()
     y = (((uint16_t)buffer[9]) << 8) | ((uint16_t)buffer[8]);
     z = (((uint16_t)buffer[11]) << 8) | ((uint16_t)buffer[10]);
 
-    m_imuData.compass.setX(-(RTFLOAT)y / 16.0);
-    m_imuData.compass.setY(-(RTFLOAT)x / 16.0);
+    m_imuData.compass.setX(-(RTFLOAT)x / 16.0);
+    m_imuData.compass.setY(-(RTFLOAT)y / 16.0);
     m_imuData.compass.setZ(-(RTFLOAT)z / 16.0);
 
     // process gyro data
@@ -289,23 +300,33 @@ bool RTIMUBNO055::IMURead()
     y = (((uint16_t)buffer[15]) << 8) | ((uint16_t)buffer[14]);
     z = (((uint16_t)buffer[17]) << 8) | ((uint16_t)buffer[16]);
 
-    m_imuData.gyro.setX(-(RTFLOAT)y / 900.0);
-    m_imuData.gyro.setY(-(RTFLOAT)x / 900.0);
+    m_imuData.gyro.setX(-(RTFLOAT)x / 900.0);
+    m_imuData.gyro.setY(-(RTFLOAT)y / 900.0);
     m_imuData.gyro.setZ(-(RTFLOAT)z / 900.0);
 
     // process euler angles
 
-    x = (((uint16_t)buffer[19]) << 8) | ((uint16_t)buffer[18]);
-    y = (((uint16_t)buffer[21]) << 8) | ((uint16_t)buffer[20]);
-    z = (((uint16_t)buffer[23]) << 8) | ((uint16_t)buffer[22]);
+    int16_t yaw, roll, pitch;
 
-    //  put in structure and do axis remap
+    yaw = (((uint16_t)buffer[19]) << 8) | ((uint16_t)buffer[18]);
+    roll = (((uint16_t)buffer[21]) << 8) | ((uint16_t)buffer[20]);
+    pitch = (((uint16_t)buffer[23]) << 8) | ((uint16_t)buffer[22]);
 
-    m_imuData.fusionPose.setX((RTFLOAT)y / 900.0);
-    m_imuData.fusionPose.setY((RTFLOAT)z / 900.0);
-    m_imuData.fusionPose.setZ((RTFLOAT)x / 900.0);
+    m_imuData.fusionPose.setX((RTFLOAT)roll / 900.0);
+    m_imuData.fusionPose.setY((RTFLOAT)pitch / 900.0);
+    m_imuData.fusionPose.setZ((RTFLOAT)yaw / 900.0);
 
-    m_imuData.fusionQPose.fromEuler(m_imuData.fusionPose);
+    int16_t w;//, x, y, z;
+
+    w = (((uint16_t)buffer[25]) << 8) | ((uint16_t)buffer[24]);
+    x = (((uint16_t)buffer[27]) << 8) | ((uint16_t)buffer[26]);
+    y = (((uint16_t)buffer[29]) << 8) | ((uint16_t)buffer[28]);
+    z = (((uint16_t)buffer[31]) << 8) | ((uint16_t)buffer[30]);
+
+    m_imuData.fusionQPose.setScalar((RTFLOAT)w / 16384.0);
+    m_imuData.fusionQPose.setX((RTFLOAT)x / 16384.0);
+    m_imuData.fusionQPose.setY((RTFLOAT)y / 16384.0);
+    m_imuData.fusionQPose.setZ((RTFLOAT)z / 16384.0);
 
     m_imuData.timestamp = RTMath::currentUSecsSinceEpoch();
 

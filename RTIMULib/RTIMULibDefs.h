@@ -59,6 +59,8 @@ typedef struct
     RTFLOAT temperature;
     bool humidityValid;
     RTFLOAT humidity;
+    RTVector3 linearAccel;
+    RTVector3 gravityVector;
 } RTIMU_DATA;
 
 #endif // _RTIMULIBDEFS_H
