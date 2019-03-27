@@ -43,28 +43,18 @@
 
 #ifdef NO_CAIL
 const unsigned char offset[NUM_BNO055_OFFSET_REGISTERS]={ //5 -12 -32 -729 -89 -553 -2 -1 0 1000 796
-0x11,
-0x00,
-0x03,
-0x00,
-0xE1,
-0xFF,
-0x74,
-0x00,
-0xFC,
-0xFC,
-0xE6,
-0xFD,
-0x01,
-0x00,
-0xFE,
-0xFF,
-0x00,
-0x00,
-0xE8,
-0x03,
-0xCE,
-0x02,};
+0xFA,	0xFF,
+0xE9,	0xFF,
+0xDF,	0xFF,
+0xD5,	0xFC,
+0x64,	0xFF,
+0xEA,	0xFD,
+0x00,	0x00,
+0x01,	0x00,
+0x00,	0x00,
+0xE8,	0x03,
+0xF3,	0x02
+};
 #endif
 
 #ifdef START_CAIL
@@ -117,6 +107,7 @@ bool RTIMUBNO055::getSensorOffsets(bno055_offsets_t &offsets_type,unsigned char 
         
         m_settings->delayMs(50);
 
+        /*
         HAL_INFO1("ACC_OFFSET_X:%d\n",offsets_type.accel_offset_x);
         HAL_INFO1("ACC_OFFSET_Y:%d\n",offsets_type.accel_offset_y);
         HAL_INFO1("ACC_OFFSET_Z:%d\n",offsets_type.accel_offset_z);
@@ -128,7 +119,18 @@ bool RTIMUBNO055::getSensorOffsets(bno055_offsets_t &offsets_type,unsigned char 
         HAL_INFO1("GYR_OFFSET_Z:%d\n",offsets_type.gyro_offset_z);
         HAL_INFO1("ACC_RADIUS:%d\n",offsets_type.accel_radius);
         HAL_INFO1("MAG_RADIUS:%d\n",offsets_type.mag_radius);
-
+        */
+        HAL_INFO1("%+05d\n",offsets_type.accel_offset_x);
+        HAL_INFO1("%+05d\n",offsets_type.accel_offset_y);
+        HAL_INFO1("%+05d\n",offsets_type.accel_offset_z);
+        HAL_INFO1("%+05d\n",offsets_type.mag_offset_x);
+        HAL_INFO1("%+05d\n",offsets_type.mag_offset_y);
+        HAL_INFO1("%+05d\n",offsets_type.mag_offset_z);
+        HAL_INFO1("%+05d\n",offsets_type.gyro_offset_x);
+        HAL_INFO1("%+05d\n",offsets_type.gyro_offset_y);
+        HAL_INFO1("%+05d\n",offsets_type.gyro_offset_z);
+        HAL_INFO1("%+05d\n",offsets_type.accel_radius);
+        HAL_INFO1("%+05d\n",offsets_type.mag_radius);
         uint8_t dummy;
         for(dummy = 0; dummy < NUM_BNO055_OFFSET_REGISTERS;dummy++){
             HAL_INFO1("0x%02X,\n", buffer[dummy]);
@@ -219,12 +221,12 @@ bool RTIMUBNO055::IMUInit()
 
     m_settings->delayMs(50);
 
-    if (!m_settings->HALWrite(m_slaveAddr, BNO055_AXIS_MAP_CONFIG, 0x21, "Failed to set BNO055 AXIS Remap Config")) //Refer Datasheet
+    if (!m_settings->HALWrite(m_slaveAddr, BNO055_AXIS_MAP_CONFIG, 0x24, "Failed to set BNO055 AXIS Remap Config")) //Refer Datasheet
         return false;
 
     m_settings->delayMs(50);
 
-    if (!m_settings->HALWrite(m_slaveAddr, BNO055_AXIS_MAP_SIGN, 0x04, "Failed to set BNO055 AXIS Remap sign")) //Refer Datasheet
+    if (!m_settings->HALWrite(m_slaveAddr, BNO055_AXIS_MAP_SIGN, 0x00, "Failed to set BNO055 AXIS Remap sign")) //Refer Datasheet
         return false;
 
     m_settings->delayMs(50);
